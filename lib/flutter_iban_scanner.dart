@@ -29,7 +29,7 @@ class IBANScannerView extends StatefulWidget {
 }
 
 class _IBANScannerViewState extends State<IBANScannerView> {
-  TextDetector textDetector = GoogleMlKit.vision.textDetector();
+  TextRecognizer textRecognizer = GoogleMlKit.vision.textRecognizer();
   ScreenMode _mode = ScreenMode.liveFeed;
   CameraLensDirection initialDirection = CameraLensDirection.back;
   CameraController? _controller;
@@ -61,7 +61,7 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   void dispose() async {
     _stopLiveFeed();
     super.dispose();
-    await textDetector.close();
+    await textRecognizer.close();
   }
 
   @override
@@ -224,7 +224,7 @@ class _IBANScannerViewState extends State<IBANScannerView> {
     if (isBusy) return;
     isBusy = true;
 
-    final recognisedText = await textDetector.processImage(inputImage);
+    final recognisedText = await textRecognizer.processImage(inputImage);
 
     for (final textBlock in recognisedText.blocks) {
       if (!regExp.hasMatch(textBlock.text)) {
@@ -281,44 +281,34 @@ class _IBANScannerViewState extends State<IBANScannerView> {
     await _startLiveFeed();
   }
 
-  Future _processCameraImage(CameraImage image) async {
+  Future<void> _processCameraImage(CameraImage image) async {
     final WriteBuffer allBytes = WriteBuffer();
     for (Plane plane in image.planes) {
       allBytes.putUint8List(plane.bytes);
     }
     final bytes = allBytes.done().buffer.asUint8List();
 
-    final Size imageSize =
-        Size(image.width.toDouble(), image.height.toDouble());
-
-    final camera = cameras[_cameraIndex];
-    final imageRotation =
-        InputImageRotationMethods.fromRawValue(camera.sensorOrientation) ??
-            InputImageRotation.Rotation_0deg;
-
-    final inputImageFormat =
-        InputImageFormatMethods.fromRawValue(image.format.raw) ??
-            InputImageFormat.NV21;
-
-    final planeData = image.planes.map(
-      (Plane plane) {
-        return InputImagePlaneMetadata(
-          bytesPerRow: plane.bytesPerRow,
-          height: plane.height,
-          width: plane.width,
-        );
-      },
-    ).toList();
-
-    final inputImageData = InputImageData(
-      size: imageSize,
-      imageRotation: imageRotation,
-      inputImageFormat: inputImageFormat,
-      planeData: planeData,
+    final Size imageSize = Size(
+      image.width.toDouble(),
+      image.height.toDouble(),
     );
 
-    final inputImage =
-        InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
+    // Rotation enum doğrudan kullanılmalı (0, 90, 180, 270 gibi)
+    final imageRotation = InputImageRotation.rotation0deg;
+
+    // Yeni format enumları
+    final inputImageFormat = InputImageFormat.nv21;
+
+    final inputImage = InputImage.fromBytes(
+      bytes: bytes,
+      metadata: InputImageMetadata(
+        size: imageSize,
+        rotation: imageRotation,
+        format: inputImageFormat,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+
     if (mounted) {
       processImage(inputImage);
     }
