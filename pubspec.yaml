@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_ml_kit: ^0.20.0
+  google_mlkit_text_recognition: ^0.15.0
   image_picker: ^1.1.2
   camera: ^0.10.0+6
   iban: ^1.1.0

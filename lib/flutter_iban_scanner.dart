@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:iban/iban.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -29,7 +29,7 @@ class IBANScannerView extends StatefulWidget {
 }
 
 class _IBANScannerViewState extends State<IBANScannerView> {
-  TextRecognizer textRecognizer = GoogleMlKit.vision.textRecognizer();
+  final TextRecognizer textRecognizer = TextRecognizer();
   ScreenMode _mode = ScreenMode.liveFeed;
   CameraLensDirection initialDirection = CameraLensDirection.back;
   CameraController? _controller;
