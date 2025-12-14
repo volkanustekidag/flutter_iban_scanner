@@ -310,6 +310,7 @@ class _IBANScannerViewState extends State<IBANScannerView> {
 
   Future<void> processImage(InputImage inputImage) async {
     if (isBusy) return;
+    if (ibanFound) return; // Zaten IBAN bulunmuş, tekrar işleme
     isBusy = true;
 
     try {
@@ -323,20 +324,23 @@ class _IBANScannerViewState extends State<IBANScannerView> {
         }
         var possibleIBAN = regExp.firstMatch(textBlock.text)!.group(2).toString();
         print('💳 Possible IBAN found: $possibleIBAN');
-        if (!isValid(possibleIBAN)) {
-          print('❌ IBAN validation failed');
+
+        // Remove spaces and dashes for validation
+        String cleanIBAN = possibleIBAN.replaceAll(' ', '').replaceAll('-', '');
+
+        if (!isValid(cleanIBAN)) {
+          print('❌ IBAN validation failed for: $cleanIBAN');
           continue;
         }
 
-        iban = toPrintFormat(possibleIBAN);
+        iban = toPrintFormat(cleanIBAN);
         ibanFound = true;
         print('✅ Valid IBAN found: $iban');
-        break;
-      }
 
-      if (ibanFound) {
-        print('🎉 Calling callback with IBAN: $iban');
+        // Callback'i çağır ve camera stream'i durdur
+        await _stopLiveFeed();
         widget.onScannerResult(iban);
+        break;
       }
     } catch (e, stackTrace) {
       print('❌ Error processing image: $e');
