@@ -50,33 +50,51 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   }
 
   void _initScanner() async {
+    print('🔍 IBAN Scanner: Initializing scanner...');
+
     // Önce kamera izni kontrol et
     final cameraStatus = await Permission.camera.status;
+    print('📷 Camera permission status: $cameraStatus');
 
     if (cameraStatus.isDenied) {
+      print('⚠️ Camera permission denied, requesting...');
       final result = await Permission.camera.request();
+      print('📷 Camera permission request result: ${result.isGranted}');
       if (!result.isGranted) {
+        print('❌ Camera permission not granted');
         if (mounted) {
           _showPermissionDeniedDialog();
         }
         return;
       }
     } else if (cameraStatus.isPermanentlyDenied) {
+      print('🚫 Camera permission permanently denied');
       if (mounted) {
         _showPermissionDeniedDialog();
       }
       return;
     }
 
+    print('✅ Camera permission granted, getting cameras...');
     cameras = widget.cameras ?? await availableCameras();
+    print('📸 Found ${cameras.length} cameras');
+
+    if (cameras.isEmpty) {
+      print('❌ No cameras available!');
+      return;
+    }
+
     if (initialDirection == CameraLensDirection.front) {
       _cameraIndex = 1;
     }
+
+    print('🎥 Starting live feed with camera index $_cameraIndex...');
     await _startLiveFeed();
     _imagePicker = ImagePicker();
 
     // Kamera başladıktan sonra UI'ı güncelle
     if (mounted) {
+      print('✅ Scanner initialized, updating UI');
       setState(() {});
     }
   }
@@ -322,25 +340,37 @@ class _IBANScannerViewState extends State<IBANScannerView> {
 
   Future _startLiveFeed() async {
     try {
+      print('🎬 _startLiveFeed: Getting camera...');
       final camera = cameras[_cameraIndex];
+      print('📹 Camera: ${camera.name}, lens direction: ${camera.lensDirection}');
+
+      print('🎥 Creating CameraController...');
       _controller = CameraController(
         camera,
         ResolutionPreset.high,
         enableAudio: false,
       );
+
+      print('⏳ Initializing camera controller...');
       await _controller?.initialize();
+      print('✅ Camera controller initialized!');
 
       if (!mounted) {
+        print('⚠️ Widget not mounted, stopping...');
         return;
       }
 
+      print('📸 Starting image stream...');
       await _controller?.startImageStream(_processCameraImage);
+      print('✅ Image stream started!');
 
       if (mounted) {
+        print('🔄 Updating UI after camera start');
         setState(() {});
       }
-    } catch (e) {
-      print('Error starting camera: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error starting camera: $e');
+      print('📋 Stack trace: $stackTrace');
       if (mounted) {
         setState(() {});
       }
