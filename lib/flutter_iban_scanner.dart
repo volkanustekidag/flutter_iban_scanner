@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:iban/iban.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 enum ScreenMode { liveFeed, gallery }
 
@@ -49,6 +50,24 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   }
 
   void _initScanner() async {
+    // Önce kamera izni kontrol et
+    final cameraStatus = await Permission.camera.status;
+
+    if (cameraStatus.isDenied) {
+      final result = await Permission.camera.request();
+      if (!result.isGranted) {
+        if (mounted) {
+          _showPermissionDeniedDialog();
+        }
+        return;
+      }
+    } else if (cameraStatus.isPermanentlyDenied) {
+      if (mounted) {
+        _showPermissionDeniedDialog();
+      }
+      return;
+    }
+
     cameras = widget.cameras ?? await availableCameras();
     if (initialDirection == CameraLensDirection.front) {
       _cameraIndex = 1;
@@ -60,6 +79,35 @@ class _IBANScannerViewState extends State<IBANScannerView> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Camera Permission Required'),
+        content: Text(
+          'This app needs camera permission to scan IBANs. Please grant camera permission in your device settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Close scanner screen
+            },
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              openAppSettings();
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Close scanner screen
+            },
+            child: Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -110,8 +158,18 @@ class _IBANScannerViewState extends State<IBANScannerView> {
       return Container(
         color: Colors.black,
         child: Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Colors.white,
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Initializing camera...',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
           ),
         ),
       );
