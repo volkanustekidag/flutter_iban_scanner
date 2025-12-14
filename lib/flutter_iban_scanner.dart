@@ -37,7 +37,7 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   File? _image;
   late ImagePicker _imagePicker;
   int _cameraIndex = 0;
-  late List<CameraDescription> cameras;
+  List<CameraDescription> cameras = [];
   bool isBusy = false;
   bool ibanFound = false;
   String iban = "";
