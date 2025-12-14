@@ -312,24 +312,35 @@ class _IBANScannerViewState extends State<IBANScannerView> {
     if (isBusy) return;
     isBusy = true;
 
-    final recognisedText = await textRecognizer.processImage(inputImage);
+    try {
+      final recognisedText = await textRecognizer.processImage(inputImage);
+      print('📝 Recognized ${recognisedText.blocks.length} text blocks');
 
-    for (final textBlock in recognisedText.blocks) {
-      if (!regExp.hasMatch(textBlock.text)) {
-        continue;
+      for (final textBlock in recognisedText.blocks) {
+        print('🔍 Text block: ${textBlock.text}');
+        if (!regExp.hasMatch(textBlock.text)) {
+          continue;
+        }
+        var possibleIBAN = regExp.firstMatch(textBlock.text)!.group(2).toString();
+        print('💳 Possible IBAN found: $possibleIBAN');
+        if (!isValid(possibleIBAN)) {
+          print('❌ IBAN validation failed');
+          continue;
+        }
+
+        iban = toPrintFormat(possibleIBAN);
+        ibanFound = true;
+        print('✅ Valid IBAN found: $iban');
+        break;
       }
-      var possibleIBAN = regExp.firstMatch(textBlock.text)!.group(2).toString();
-      if (!isValid(possibleIBAN)) {
-        continue;
+
+      if (ibanFound) {
+        print('🎉 Calling callback with IBAN: $iban');
+        widget.onScannerResult(iban);
       }
-
-      iban = toPrintFormat(possibleIBAN);
-      ibanFound = true;
-      break;
-    }
-
-    if (ibanFound) {
-      widget.onScannerResult(iban);
+    } catch (e, stackTrace) {
+      print('❌ Error processing image: $e');
+      print('📋 Stack trace: $stackTrace');
     }
 
     isBusy = false;
