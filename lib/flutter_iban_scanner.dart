@@ -55,6 +55,11 @@ class _IBANScannerViewState extends State<IBANScannerView> {
     }
     await _startLiveFeed();
     _imagePicker = ImagePicker();
+
+    // Kamera başladıktan sonra UI'ı güncelle
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -101,8 +106,15 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   }
 
   Widget _liveFeedBody() {
-    if (_controller?.value.isInitialized == false) {
-      return Container();
+    if (_controller?.value.isInitialized == false || _controller == null) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      );
     }
     return SafeArea(
       child: Container(
@@ -251,19 +263,30 @@ class _IBANScannerViewState extends State<IBANScannerView> {
   }
 
   Future _startLiveFeed() async {
-    final camera = cameras[_cameraIndex];
-    _controller = CameraController(
-      camera,
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
-    _controller?.initialize().then((_) {
+    try {
+      final camera = cameras[_cameraIndex];
+      _controller = CameraController(
+        camera,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      await _controller?.initialize();
+
       if (!mounted) {
         return;
       }
-      _controller?.startImageStream(_processCameraImage);
-      setState(() {});
-    });
+
+      await _controller?.startImageStream(_processCameraImage);
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error starting camera: $e');
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   Future _stopLiveFeed() async {
