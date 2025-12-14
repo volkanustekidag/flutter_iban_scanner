@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Sadece text recognition kullan - diğer ML Kit modülleri yüklenmiyor
   google_mlkit_text_recognition: ^0.15.0
   image_picker: ^1.1.2
   camera: ^0.10.0+6
