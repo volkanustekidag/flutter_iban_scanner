@@ -404,11 +404,19 @@ class _IBANScannerViewState extends State<IBANScannerView> {
       image.height.toDouble(),
     );
 
-    // Rotation enum doğrudan kullanılmalı (0, 90, 180, 270 gibi)
-    final imageRotation = InputImageRotation.rotation0deg;
+    // iOS ve Android için farklı rotation ve format
+    InputImageRotation imageRotation;
+    InputImageFormat inputImageFormat;
 
-    // Yeni format enumları
-    final inputImageFormat = InputImageFormat.nv21;
+    if (Platform.isIOS) {
+      // iOS için
+      imageRotation = InputImageRotation.rotation90deg;
+      inputImageFormat = InputImageFormat.bgra8888;
+    } else {
+      // Android için
+      imageRotation = InputImageRotation.rotation90deg;
+      inputImageFormat = InputImageFormat.nv21;
+    }
 
     final inputImage = InputImage.fromBytes(
       bytes: bytes,
